@@ -47,3 +47,17 @@ const Select = () => {
   );
 };
 ```
+
+Possible use cases:
+
+- Select with sync data loading
+- Select with async data loading (i.e Suggest)
+- Select with search
+  - Search Bar in dropdown
+  - Search Bar in view
+  - Loading/Error states
+- Select with ability to add new item
+
+It would be great to try to create all this functionality through extensions.
+
+Very similar to what react-table did, it will allow any user who understands the mechanism of the hook to modify the behavior to suit his particular needs.
