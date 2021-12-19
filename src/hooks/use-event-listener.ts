@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { batchUpdates } from '../utils/batch-updates';
 import { useLatest } from './use-latest';
 
 type EventListener = {
@@ -19,7 +20,12 @@ export function useEventListener({
   const latestListener = useLatest(listener);
 
   useEffect(() => {
-    const actualListener = (event: Event) => latestListener()(event);
+    const actualListener = (event: Event) => {
+      const listener = latestListener();
+      batchUpdates(() => {
+        listener(event);
+      });
+    };
 
     element.addEventListener(type, actualListener);
 

@@ -1,6 +1,6 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { useEventListener } from '../../hooks';
-import { noop } from '../../utils';
+import { noop, findBy } from '../../utils';
 
 type ValueType = number | string | boolean;
 
@@ -19,8 +19,6 @@ interface UseSelectOptions<T extends ValueType> {
   // compareValue?: (a: T, b: T) => boolean;
 }
 
-const refCompare = (a: unknown, b: unknown) => a === b;
-
 const includesString = (a: string, b: string) =>
   a.toLowerCase().includes(b.toLowerCase());
 
@@ -30,13 +28,20 @@ export function useSelect<T extends ValueType>(props: UseSelectOptions<T>) {
   const [search, setSearch] = useState('');
 
   const uncontrolled = typeof value === 'undefined' || value === null;
-  const [selectedValue, setSelectedValue] = useState();
 
-  const currentValue = uncontrolled ? selectedValue : null;
+  const getSelectedItem = (value?: T) =>
+    value ? findBy(items, 'value', value) : undefined;
 
-  const [selected, setSelected] = useState(() =>
-    items.find(item => refCompare(item.value, initialValue))
-  );
+  const [selected, setSelected] = useState(() => getSelectedItem(initialValue));
+
+  const currentValue = useMemo(() => {
+    if (uncontrolled) {
+      return selected;
+    }
+
+    return getSelectedItem(value);
+  }, [uncontrolled, selected, value]);
+
   const [dropdownVisible, setDropdownVisible] = useState(false);
   const dropdownRef = useRef<HTMLElement | null>(null);
 
@@ -111,7 +116,7 @@ export function useSelect<T extends ValueType>(props: UseSelectOptions<T>) {
   }
 
   const propsGetter = {
-    selectedItem: selected,
+    selectedItem: currentValue,
     options: filteredOptions,
     getSearchProps,
     getViewProps,

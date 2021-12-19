@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useSelect } from '../components/Select/Select';
 
 const items = [
@@ -22,6 +22,8 @@ export default {
 };
 
 function App() {
+  const [value, setValue] = useState<number>();
+
   const {
     selectedItem,
     options,
@@ -31,7 +33,9 @@ function App() {
     getDropdownProps,
   } = useSelect({
     items: items,
+    onChange: setValue,
   });
+
   return (
     <div style={{ margin: 50 }}>
       <div {...getViewProps()}>{selectedItem?.title || 'Choose item'}</div>
