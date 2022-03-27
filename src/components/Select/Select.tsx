@@ -19,20 +19,80 @@ interface UseSelectOptions<T extends ValueType> {
   // compareValue?: (a: T, b: T) => boolean;
 }
 
+/* enum Actions {
+  INIT = 'INIT',
+}
+
+interface SearchExtensionProps<T extends ValueType> extends AnyObject {
+  options: {
+    key: T;
+    value: T;
+    title: string;
+    getOptionProps(): {
+      onClick: (event: React.MouseEvent) => void;
+    };
+  }[];
+}
+
+function searchExtension<T extends ValueType>({
+  options,
+  ...rest
+}: SearchExtensionProps<T>) {
+  // TODO think about clear search action
+  const [search, setSearch] = useState('');
+
+  const filteredOptions = useMemo(
+    () => options.filter(option => includesString(option.title, search)),
+    [options, search]
+  );
+
+  function getSearchProps() {
+    return {
+      value: search,
+      onChange: (
+        event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+      ) => {
+        setSearch(event.target.value);
+      },
+    };
+  }
+
+  return {
+    options: filteredOptions,
+    getSearchProps,
+    ...rest,
+  };
+} */
+
 const includesString = (a: string, b: string) =>
   a.toLowerCase().includes(b.toLowerCase());
 
 export function useSelect<T extends ValueType>(props: UseSelectOptions<T>) {
   const { value, initialValue, items, onChange = noop } = props;
 
-  const [search, setSearch] = useState('');
-
   const uncontrolled = typeof value === 'undefined' || value === null;
 
   const getSelectedItem = (value?: T) =>
     value ? findBy(items, 'value', value) : undefined;
 
+  const [search, setSearch] = useState('');
   const [selected, setSelected] = useState(() => getSelectedItem(initialValue));
+  const [dropdownVisible, setDropdownVisible] = useState(false);
+  const dropdownRef = useRef<HTMLElement | null>(null);
+
+  useEventListener({
+    type: 'click',
+    listener: e => {
+      if (!dropdownRef.current) return;
+      const target = e.target as Node;
+
+      if (!dropdownRef.current.contains(target)) {
+        setDropdownVisible(false);
+        setSearch('');
+      }
+    },
+    element: document,
+  });
 
   const currentValue = useMemo(() => {
     if (uncontrolled) {
@@ -41,9 +101,6 @@ export function useSelect<T extends ValueType>(props: UseSelectOptions<T>) {
 
     return getSelectedItem(value);
   }, [uncontrolled, selected, value]);
-
-  const [dropdownVisible, setDropdownVisible] = useState(false);
-  const dropdownRef = useRef<HTMLElement | null>(null);
 
   const options = useMemo(
     () =>
@@ -69,24 +126,10 @@ export function useSelect<T extends ValueType>(props: UseSelectOptions<T>) {
     [items, onChange]
   );
 
-  const filteredOptions = useMemo(
-    () => options.filter(option => includesString(option.title, search)),
-    [options, search]
-  );
-
-  useEventListener({
-    type: 'click',
-    listener: e => {
-      if (!dropdownRef.current) return;
-      const target = e.target as Node;
-
-      if (!dropdownRef.current.contains(target)) {
-        setDropdownVisible(false);
-        setSearch('');
-      }
-    },
-    element: document,
-  });
+  const filteredOptions = useMemo(() => {
+    if (search === '') return options;
+    return options.filter(option => includesString(option.title, search));
+  }, [options, search]);
 
   function getSearchProps() {
     return {
@@ -115,7 +158,7 @@ export function useSelect<T extends ValueType>(props: UseSelectOptions<T>) {
     };
   }
 
-  const propsGetter = {
+  const result = {
     selectedItem: currentValue,
     options: filteredOptions,
     getSearchProps,
@@ -125,5 +168,5 @@ export function useSelect<T extends ValueType>(props: UseSelectOptions<T>) {
     getDropdownProps,
   };
 
-  return propsGetter;
+  return result;
 }
